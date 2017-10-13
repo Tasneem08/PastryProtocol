@@ -14,6 +14,8 @@ config :project3, Project3.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "Ze4UFYBtYuxdLM1vykVlWTh1O+JPUgsku8W8EgkhVO6/HgvxLTMxCiIdvgjjOgx/",
   render_errors: [view: Project3.ErrorView, accepts: ~w(html json)],
+ # username: "sheikht",
+ # password: "postgres",
   pubsub: [name: Project3.PubSub,
            adapter: Phoenix.PubSub.PG2]
 

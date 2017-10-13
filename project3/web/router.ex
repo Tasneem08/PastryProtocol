@@ -13,14 +13,16 @@ defmodule Project3.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", Project3 do
-    pipe_through :browser # Use the default browser stack
+  # scope "/", Project3 do
+  #   pipe_through :browser # Use the default browser stack
 
-    get "/", PageController, :index
-  end
+  #   get "/", PageController, :index
+  # end
 
   # Other scopes may use custom stacks.
-  # scope "/api", Project3 do
-  #   pipe_through :api
-  # end
+  scope "/api", Project3 do
+    pipe_through :api
+    get "/users", UserController, :index
+    get "/user/:id", UserController, :show
+  end
 end
