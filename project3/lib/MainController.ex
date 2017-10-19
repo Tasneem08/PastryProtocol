@@ -10,31 +10,37 @@ use GenServer
     # Start up nodes with blank routing table information
     nodeMap=%{}
     nodeList=Enum.to_list(1..numNodes)
-    nodeMap = loadGenservers(nodeList, numNodes, numRequests, nodeMap)
-
+    numDigits = Float.ceil(:math.log(numNodes) / :math.log(4)) |> round
+    {nodeMap, nodeList} = loadGenservers(nodeList, numDigits, numNodes, numRequests, nodeMap, [])
+    IO.inspect nodeList
     # Start gen server
-    start_link(nodeMap, numNodes, algorithm)
+    start_link(nodeMap, numNodes)
 
-    GenServer.cast(:main_server, {:initiateProtocol, map})
+    #GenServer.cast(:main_server, {:initiateProtocol, map})
 
     :timer.sleep(:infinity)
 
-   #Gossip.Supervisor.start_link(numNodes,topology,algorithm)
   end
 
-  def loadGenservers([nodeId|nodeList], numNodes, numRequests, nodeMap) do
+  def loadGenservers([nodeId|nodeList], numDigits, numNodes, numRequests, nodeMap, newNodeList) do
+   nodeId = Integer.to_string(nodeId,4)|> String.pad_leading(numDigits, "0")
+   newNodeList = List.insert_at(newNodeList, 0, nodeId)
    {_, pid} = PastryNode.start_link(nodeId, numNodes, numRequests)
    nodeMap = Map.put(nodeMap,pid,nodeId)
-   loadGenservers(nodeList, numNodes, numRequests, nodeMap)
+   loadGenservers(nodeList, numDigits, numNodes, numRequests, nodeMap, newNodeList)
   end
 
-  def loadGenservers([], numNodes, numRequests, nodeMap) do
-    nodeMap
+  def loadGenservers([], numDigits, numNodes, numRequests, nodeMap, newNodeList) do
+    {nodeMap, newNodeList}
   end
   
   def start_link(nodeMap, numNodes) do
     GenServer.start_link(MainController, [nodeMap, numNodes], name: :main_server)
   end
+
+
+
+
 
     def init(map, numNodes, algorithm, count, starttime) do
       {:ok, {map, numNodes, algorithm, count, starttime}}
