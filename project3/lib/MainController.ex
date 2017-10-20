@@ -26,7 +26,7 @@ use GenServer
    nodeId = Integer.to_string(nodeId,4)|> String.pad_leading(numDigits, "0")
    newNodeList = List.insert_at(newNodeList, 0, nodeId)
    {_, pid} = PastryNode.start_link(nodeId, numNodes, numRequests)
-   nodeMap = Map.put(nodeMap,pid,nodeId)
+   nodeMap = Map.put(nodeMap,nodeId, pid)
    loadGenservers(nodeList, numDigits, numNodes, numRequests, nodeMap, newNodeList)
   end
 
