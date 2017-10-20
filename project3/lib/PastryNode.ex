@@ -130,12 +130,13 @@ use GenServer
     def sendRequest([], myID, nodeIDSpace) do
      {:ok}
     end
+
     def handle_cast({:first_join, firstGroup}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = IO.inspect state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       firstGroup = List.delete(firstGroup, myID)
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, firstGroup, numBits, lesserLeaf, largerLeaf, routing_table)
-        GenServer.cast(:global.whereis_name(@name), :join_finish)
+            GenServer.cast(:global.whereis_name(@name), :join_finish)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
@@ -144,7 +145,7 @@ use GenServer
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, newNode, numBits, lesserLeaf, largerLeaf, routing_table)
       # Send ack
-        GenServer.cast(String.to_atom("child"<>Integer.to_string(newNode)), :ack)
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(newNode)), :ack)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
@@ -153,10 +154,10 @@ use GenServer
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, allLeaf, numBits, lesserLeaf, largerLeaf, routing_table)
       for i <- lesserLeaf do
-         GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:update_me, myID})
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:update_me, myID})
       end
       for i <- largerLeaf do
-         GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:update_me, myID})
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:update_me, myID})
       end
       numOfBack = numOfBack + length(lesserLeaf) + length(largerLeaf)
       # Iterate over the routing_table and call Update_Me on valid entries
