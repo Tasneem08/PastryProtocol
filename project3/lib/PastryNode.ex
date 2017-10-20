@@ -119,6 +119,19 @@ use GenServer
        numBits
     end
     end
+
+    def addRow(routing_table,rowNum,newRow,i) do
+     if(i>=4) do 
+        routing_table
+     else 
+     if elem(elem(routing_table, rowNum),i) == -1 do
+        elem(elem(routing_table, rowNum),i) = elem(newRow,i)
+     end
+       addRow(routing_table,rowNum,newRow,i+1)
+       routing_table
+    end
+    end
+
     @doc """
     """   
     def handle_cast({:first_join, firstGroup}, state) do
@@ -130,35 +143,11 @@ use GenServer
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
-    def addRow() do
-     if(i>=4) do 
-     routing_table
-     else 
-     if elem(elem(routing_table, rowNum),i) == -1 do
-        elem(elem(routing_table, rowNum),i) = elem(newRow,i)
-     
-     else
-     GenServer.cast()
-    end
-
+    
+    #Add row
     def handle_cast({:addRow,rowNum,newRow,i}, state) do
         {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
-        # routing_table = for i = 0..4 do
-          # if(i<4) do 
-          # if elem(elem(routing_table, rowNum),i) == -1 do
-          # elem(elem(routing_table, rowNum),i) = elem(newRow,i)
-          # end
-          # i++
-          # GenServer.cast(rowNum,newRow,i,:addRow)     
-
-          # else do
-          #  GenServer.cast(rowNum,newRow,4,:addRow)
-          # end  
-          routing_table=addRow(rowNum,newRow,i)   
-        {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
-    end
-
-    def handle_cast({:addRow,rowNum,newRow,4}, state) do
+        routing_table=addRow(rowNum,newRow,0)   
         {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
