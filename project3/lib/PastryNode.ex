@@ -120,20 +120,6 @@ use GenServer
     end
     end
 
-    def addRow(routing_table,rowNum,newRow,i) do
-     if(i>=4) do 
-        routing_table
-     else 
-     if elem(elem(routing_table, rowNum),i) == -1 do
-        elem(elem(routing_table, rowNum),i) = elem(newRow,i)
-     end
-       addRow(routing_table,rowNum,newRow,i+1)
-       routing_table
-    end
-    end
-
-    @doc """
-    """   
     def handle_cast({:first_join, firstGroup}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = IO.inspect state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
@@ -141,14 +127,6 @@ use GenServer
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, firstGroup, numBits, lesserLeaf, largerLeaf, routing_table)
         GenServer.cast(:global.whereis_name(@name), :join_finish)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
-    end
-
-    
-    #Add row
-    def handle_cast({:addRow,rowNum,newRow,i}, state) do
-        {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
-        routing_table=addRow(rowNum,newRow,0)   
-        {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
     def handle_cast({:update_me, newNode}, state) do
@@ -190,4 +168,12 @@ use GenServer
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
+    def handle_cast({:begin_route, numRequests}, state) do
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+      numOfBack = numOfBack - 1
+      if(numOfBack == 0) do
+            GenServer.cast(:global.whereis_name(@name), :join_finish)
+      end
+      {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+    end
 end
