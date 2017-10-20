@@ -120,6 +120,16 @@ use GenServer
     end
     end
 
+    def sendRequest([i | rest], myID, nodeIDSpace) do
+        Process.sleep(1000)
+        destination = Enum.random(0..nodeIDSpace)
+        GenServer.cast(String.to_atom("child"<>Integer.to_string(myID)), {:route, "Route", myID, destination, -1})
+        sendRequest(rest, myID, nodeIDSpace)
+    end
+
+    def sendRequest([], myID, nodeIDSpace) do
+     {:ok}
+    end
     def handle_cast({:first_join, firstGroup}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = IO.inspect state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
@@ -170,10 +180,9 @@ use GenServer
 
     def handle_cast({:begin_route, numRequests}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
-      numOfBack = numOfBack - 1
-      if(numOfBack == 0) do
-            GenServer.cast(:global.whereis_name(@name), :join_finish)
-      end
+      numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
+      nodeIDSpace = round(Float.ceil(:math.pow(@base, numBits)))
+      sendRequest(Enum.to_list(1..numRequests), myID, nodeIDSpace)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 end

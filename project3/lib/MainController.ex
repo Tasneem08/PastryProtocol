@@ -160,7 +160,7 @@ defmodule MainController do
   end
 
   def handle_cast(:begin_route, state) do
-    {_, randList, _, _, _, _, _, _} = state
+    {_, randList, numRequests, _, _, _, _, _} = state
     for node <- randList do
         GenServer.cast(String.to_atom("child"<>Integer.to_string(node)), {:begin_route, numRequests})
     end
