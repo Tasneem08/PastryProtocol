@@ -160,30 +160,17 @@ defmodule MainController do
   end
 
   def handle_cast(:begin_route, state) do
-    {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
-    numFirstGroup = if (numNodes <= 1024) do numNodes else 1024 end
-    numJoined = numJoined + 1
-    if(numJoined >= numFirstGroup) do
-      if(numJoined >= numNodes) do
-        GenServer.cast(:global.whereis_name(@name), :begin_route)
-      else
-        GenServer.cast(:global.whereis_name(@name), :second_join)
-      end
+    {_, randList, _, _, _, _, _, _} = state
+    for node <- randList do
+        GenServer.cast(String.to_atom("child"<>Integer.to_string(node)), {:begin_route, numRequests})
     end
-    {:noreply, {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
+    {:noreply, state}
   end
 
     def handle_cast(:second_join, state) do
     {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
-    numFirstGroup = if (numNodes <= 1024) do numNodes else 1024 end
-    numJoined = numJoined + 1
-    if(numJoined >= numFirstGroup) do
-      if(numJoined >= numNodes) do
-        GenServer.cast(:global.whereis_name(@name), :begin_route)
-      else
-        GenServer.cast(:global.whereis_name(@name), :second_join)
-      end
-    end
+    startID = elem(randList, Enum.random(0..numJoined-1))
+      GenServer.cast(String.to_atom("child"<>Integer.to_string(startID)), {:route, "Join", startID, elem(randList, numJoined), -1})
     {:noreply, {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
   end
 

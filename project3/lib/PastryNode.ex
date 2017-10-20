@@ -119,8 +119,7 @@ use GenServer
        numBits
     end
     end
-    @doc """
-    """   
+
     def handle_cast({:first_join, firstGroup}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = IO.inspect state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
@@ -169,4 +168,12 @@ use GenServer
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
+    def handle_cast({:begin_route, numRequests}, state) do
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+      numOfBack = numOfBack - 1
+      if(numOfBack == 0) do
+            GenServer.cast(:global.whereis_name(@name), :join_finish)
+      end
+      {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+    end
 end
