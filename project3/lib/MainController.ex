@@ -117,7 +117,7 @@ defmodule MainController do
   @base 4
 
   def start_link(state) do
-    GenServer.start_link(__MODULE__, state)
+    GenServer.start_link(MainController, state)
   end
 
   @doc """
@@ -131,15 +131,25 @@ defmodule MainController do
     firstGroup = Enum.slice(randList, 0..(numFirstGroup-1))
 
     list_pid = for nodeID <- firstGroup do
-      {:ok, pid} = PastryNode.start_link(nodeID, numNodes)
+      {_, pid} = PastryNode.startlink(nodeID, numNodes)
       pid
-    end
-    
+    end 
+    IO.inspect list_pid
     # First Join
     for pid <- list_pid do
       GenServer.cast(pid, {:first_join, firstGroup})
     end
     {:noreply, state}
+  end
+
+  def loadGenservers([nodeId|firstGroup], numNodes, list_pid) do
+     {_, pid} = PastryNode.startlink(nodeId, numNodes)
+     list_pid = List.insert_at(list_pid, 0, pid)
+     loadGenservers(firstGroup, numNodes, list_pid)
+  end
+
+  def loadGenservers([], numNodes, list_pid) do
+    list_pid
   end
 
   def main(args) do
