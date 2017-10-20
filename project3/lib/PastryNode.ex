@@ -102,6 +102,23 @@ use GenServer
       end
     end
     
+
+    def tellRoutingNodes(routing_table, i, j, numBits, myID, numOfBack) do
+    if i >= numBits or j >= 4 do
+        numBits
+    else
+    node = elem(elem(routing_table, i), j)
+       if node != -1 do
+            numBits=numBits+1
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(node)), {:update_me, myID})
+       end
+       tellRoutingNodes(routing_table, i, j + 1, numBits, myID, numOfBack)
+       if j == 0 do
+            tellRoutingNodes(routing_table, i + 1, j, numBits, myID, numOfBack)
+       end
+       numBits
+    end
+    end
     @doc """
     """   
     def handle_cast({:first_join, firstGroup}, state) do
@@ -109,6 +126,7 @@ use GenServer
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       firstGroup = List.delete(firstGroup, myID)
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, firstGroup, numBits, lesserLeaf, largerLeaf, routing_table)
+        GenServer.cast(:global.whereis_name(@name), :join_finish)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
@@ -118,6 +136,27 @@ use GenServer
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, newNode, numBits, lesserLeaf, largerLeaf, routing_table)
       # Send ack
         GenServer.cast(String.to_atom("child"<>Integer.to_string(newNode)), :ack)
+      {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+    end
+
+    def handle_cast({:add_leaf, allLeaf}, state) do
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+      numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
+      {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, allLeaf, numBits, lesserLeaf, largerLeaf, routing_table)
+      for i <- lesserLeaf do
+         GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:update_me, myID})
+      end
+      for i <- largerLeaf do
+         GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:update_me, myID})
+      end
+      numOfBack = numOfBack + length(lesserLeaf) + length(largerLeaf)
+      # Iterate over the routing_table and call Update_Me on valid entries
+        numOfBack = tellRoutingNodes(routing_table, 0, 0, numBits, myID, numOfBack)
+      for i <- numBits do
+          row = elem(routing_table, i)
+          updatedRow = Tuple.insert_at(Tuple.delete_at(row, i), i, myID)
+          Tuple.insert_at(Tuple.delete_at(routing_table, i), i, updatedRow)
+      end
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 

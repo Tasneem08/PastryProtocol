@@ -116,14 +116,17 @@ defmodule MainController do
   @name :master
   @base 4
 
-  def start_link(state) do
-    GenServer.start_link(MainController, state)
+  def start_link(numNodes, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth) do
+    GenServer.start_link(MainController, [numNodes, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth])
   end
 
+  def init([numNodes, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth]) do
+      {:ok, {numNodes, [], numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
+  end
   @doc """
   """   
   def handle_cast(:go, state) do
-    [numNodes, numRequests] = state
+    {numNodes, _, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
     numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
     nodeIDSpace = round(Float.ceil(:math.pow(@base, numBits)))
     numFirstGroup = if (numNodes <= 1024) do numNodes else 1024 end
@@ -139,25 +142,61 @@ defmodule MainController do
     for pid <- list_pid do
       GenServer.cast(pid, {:first_join, firstGroup})
     end
-    {:noreply, state}
+    {:noreply, {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
   end
 
-  def loadGenservers([nodeId|firstGroup], numNodes, list_pid) do
-     {_, pid} = PastryNode.startlink(nodeId, numNodes)
-     list_pid = List.insert_at(list_pid, 0, pid)
-     loadGenservers(firstGroup, numNodes, list_pid)
+  def handle_cast(:join_finish, state) do
+    {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
+    numFirstGroup = if (numNodes <= 1024) do numNodes else 1024 end
+    numJoined = numJoined + 1
+    if(numJoined >= numFirstGroup) do
+      if(numJoined >= numNodes) do
+        GenServer.cast(:global.whereis_name(@name), :begin_route)
+      else
+        GenServer.cast(:global.whereis_name(@name), :second_join)
+      end
+    end
+    {:noreply, {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
   end
 
-  def loadGenservers([], numNodes, list_pid) do
-    list_pid
+  def handle_cast(:begin_route, state) do
+    {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
+    numFirstGroup = if (numNodes <= 1024) do numNodes else 1024 end
+    numJoined = numJoined + 1
+    if(numJoined >= numFirstGroup) do
+      if(numJoined >= numNodes) do
+        GenServer.cast(:global.whereis_name(@name), :begin_route)
+      else
+        GenServer.cast(:global.whereis_name(@name), :second_join)
+      end
+    end
+    {:noreply, {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
+  end
+
+    def handle_cast(:second_join, state) do
+    {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
+    numFirstGroup = if (numNodes <= 1024) do numNodes else 1024 end
+    numJoined = numJoined + 1
+    if(numJoined >= numFirstGroup) do
+      if(numJoined >= numNodes) do
+        GenServer.cast(:global.whereis_name(@name), :begin_route)
+      else
+        GenServer.cast(:global.whereis_name(@name), :second_join)
+      end
+    end
+    {:noreply, {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
   end
 
   def main(args) do
     [numNodes, numRequests] = args
     numNodes = String.to_integer(numNodes)
     numRequests = String.to_integer(numRequests)
-
-    {:ok, master_pid} = start_link([numNodes, numRequests])
+    numJoined = 0
+    numNotInBoth = 0
+    numRouted = 0
+    numHops = 0
+    numRouteNotInBoth = 0
+    {:ok, master_pid} = start_link(numNodes, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth)
     :global.register_name(@name, master_pid)
     :global.sync()
     GenServer.cast(:global.whereis_name(@name), :go)
