@@ -112,6 +112,38 @@ use GenServer
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
+    def addRow() do
+     if(i>=4) do 
+     routing_table
+     else 
+     if elem(elem(routing_table, rowNum),i) == -1 do
+        elem(elem(routing_table, rowNum),i) = elem(newRow,i)
+     
+     else
+     GenServer.cast()
+    end
+
+    def handle_cast({:addRow,rowNum,newRow,i}, state) do
+        {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+        # routing_table = for i = 0..4 do
+          # if(i<4) do 
+          # if elem(elem(routing_table, rowNum),i) == -1 do
+          # elem(elem(routing_table, rowNum),i) = elem(newRow,i)
+          # end
+          # i++
+          # GenServer.cast(rowNum,newRow,i,:addRow)     
+
+          # else do
+          #  GenServer.cast(rowNum,newRow,4,:addRow)
+          # end  
+          routing_table=addRow(rowNum,newRow,i)   
+        {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+    end
+
+    def handle_cast({:addRow,rowNum,newRow,4}, state) do
+        {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+    end
+
     def handle_cast({:update_me, newNode}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
