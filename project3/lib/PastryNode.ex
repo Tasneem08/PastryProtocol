@@ -293,7 +293,7 @@ use GenServer
     def handle_cast({:update_me, newNode}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
-      {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, newNode, numBits, lesserLeaf, largerLeaf, routing_table)
+      {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, [newNode], numBits, lesserLeaf, largerLeaf, routing_table)
       #Send ack
       GenServer.cast(String.to_atom("child"<>Integer.to_string(newNode)), :ack)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
