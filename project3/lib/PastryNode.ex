@@ -163,7 +163,9 @@ use GenServer
       nodeIDSpace = round(Float.ceil(:math.pow(@base, numBits)))
       nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))#last condition
 
-    if(msg=="Join") do
+    cond do
+
+      msg=="Join" ->
       
         samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
         if(hops == -1 && samePref > 0) do
@@ -173,7 +175,10 @@ use GenServer
         end
       GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:addRow, i,elem(routing_table,samePref)})
 
-      if(length(lesserLeaf)>0 && toId >= Enum.min(lesserLeaf) && toId <= myID || length(largerLeaf)>0 && toId >= Enum.max(largerLeaf) && toId >= myID) do
+      cond do
+        #first condition
+        (length(lesserLeaf)>0 && toId >= Enum.min(lesserLeaf) && toId <= myID) || (length(largerLeaf)>0 && toId >= Enum.max(largerLeaf) && toId >= myID) ->
+        
         diff=nodeIDSpace + 10
         nearest=-1
         if(toId < myID) do
@@ -198,51 +203,91 @@ use GenServer
         else #I am the nearest
           allLeaf ++ [myID] ++ [lesserLeaf]++[largerLeaf] # check syntax
           GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
-        end    
-      
-      
-      #bada if
-      else 
-      if(length(lesserLeaf)<4 && length(lesserLeaf)>0 && toId < Enum.min(lesserLeaf)) do
-       GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:route,fromId,toId,hops+1})
-      else
-      if(length(largerLeaf)<4 && length(largerLeaf)>0 && toId > Enum.max(largerLeaf)) do
-       GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(lesserLeaf))), {:route,fromId,toId,hops+1})
-      else
-      if(length(lesserLeaf)==0 && toId<myID || length(largerLeaf)==0 && toId>myID) do #I am the nearest
-        allLeaf ++ [myID] ++ [lesserLeaf]++[largerLeaf] # check syntax
-        GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
-      else 
-        if elem(elem(routing_table, samePref), nextBit) != -1 do
+        end 
+
+      #cond else if       
+      length(lesserLeaf)<4 && length(lesserLeaf)>0 && toId < Enum.min(lesserLeaf) ->
+         GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:route,fromId,toId,hops+1})
+      length(largerLeaf)<4 && length(largerLeaf)>0 && toId > Enum.max(largerLeaf) ->
+         GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(lesserLeaf))), {:route,fromId,toId,hops+1})
+      length(lesserLeaf)==0 && toId<myID || length(largerLeaf)==0 && toId>myID -> #I am the nearest
+         allLeaf ++ [myID] ++ [lesserLeaf]++[largerLeaf] # check syntax
+         GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
+      elem(elem(routing_table, samePref), nextBit) != -1 ->
           # row = elem(routing_table, samePref)
          GenServer.cast(String.to_atom("child"<>Integer.to_string(numBits), {:route,fromId,toId,hops+1})
-      else 
-       if toId > myID do
-       GenServer.cast(String.to_atom("child"<>Integer.to_string(max(largerLeaf)), {:route,fromId,toId,hops+1})
+      toId > myID ->
+         GenServer.cast(String.to_atom("child"<>Integer.to_string(max(largerLeaf)), {:route,fromId,toId,hops+1})
        #not in both
-      else
-      if toId < myID do
-      GenServer.cast(String.to_atom("child"<>Integer.to_string(max(largerLeaf)), {:route,fromId,toId,hops+1})
-      #not in both
-      else
-
-      IO.puts("Impossible")
+      toId < myID ->
+         GenServer.cast(String.to_atom("child"<>Integer.to_string(max(largerLeaf)), {:route,fromId,toId,hops+1})
+      #not in both ..else condition
+      true ->
+         IO.puts("Impossible")
       
+      end
 
-
-   else if(msg=="Route") do
-       GenServer.cast(String.to_atom("child"<>Integer.to_string(max(largerLeaf)), {:route,fromId,toId,hops+1})
+    msg=="Route" ->
+       #GenServer.cast(String.to_atom("child"<>Integer.to_string(max(largerLeaf)), {:route,fromId,toId,hops+1})
         if myID ==toId do
-          GenServer.cast(:global.whereis_name(@name), :route_finish)# to be implemented
+          GenServer.cast(:global.whereis_name(@name), {:route_finish,fromId,toId,hops+1})# to be implemented
         else 
         {
           samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
+          cond do
+        #first condition
+          (length(lesserLeaf)>0 && toId >= Enum.min(lesserLeaf) && toId <= myID) || (length(largerLeaf)>0 && toId >= Enum.max(largerLeaf) && toId >= myID) ->
           
-        }
-     
-      end #end of if
+          diff=nodeIDSpace + 10
+          nearest=-1
+          if(toId < myID) do
+            for i<-lesserLeaf do
+              if(abs(toId - i) < diff) do
+                nearest=i
+                diff=abs(toId-i)
+              end
+            end
+          else 
+            for i<-largerLeaf do
+                if(abs(toId - i) < diff) do
+                  nearest=i
+                  diff=abs(toId-i)
+                end
+            end
+          end
 
+          if(abs(toId - myID) > diff) do
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(nearest)), {:route,fromId,toId,hops+1})
+          
+          else #I am the nearest
+            allLeaf ++ [myID] ++ [lesserLeaf]++[largerLeaf] # check syntax
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
+          end 
+                  
+        #cond else if       
+        length(lesserLeaf)<4 && length(lesserLeaf)>0 && toId < Enum.min(lesserLeaf) ->
+          GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:route,fromId,toId,hops+1})
+        length(largerLeaf)<4 && length(largerLeaf)>0 && toId > Enum.max(largerLeaf) ->
+          GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(lesserLeaf))), {:route,fromId,toId,hops+1})
+        length(lesserLeaf)==0 && toId<myID || length(largerLeaf)==0 && toId>myID -> #I am the nearest
+          allLeaf ++ [myID] ++ [lesserLeaf]++[largerLeaf] # check syntax
+          GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
+        elem(elem(routing_table, samePref), nextBit) != -1 ->
+            # row = elem(routing_table, samePref)
+          GenServer.cast(String.to_atom("child"<>Integer.to_string(numBits), {:route,fromId,toId,hops+1})
+        toId > myID ->
+          GenServer.cast(String.to_atom("child"<>Integer.to_string(max(largerLeaf)), {:route,fromId,toId,hops+1})
+        #not in both
+        toId < myID ->
+          GenServer.cast(String.to_atom("child"<>Integer.to_string(max(largerLeaf)), {:route,fromId,toId,hops+1})
+        #not in both ..else condition
+        true ->
+          IO.puts("Impossible")
+        end   #end of cond       
+      }
+    end #end of ?
 
+    end#end of cond
        
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
