@@ -120,7 +120,6 @@ use GenServer
     end
     end
 
-<<<<<<< HEAD
     def addRow(routing_table,rowNum,newRow,i) do
      if(i>=4) do 
         routing_table
@@ -135,7 +134,6 @@ use GenServer
 
     @doc """
     """   
-=======
     def sendRequest([i | rest], myID, nodeIDSpace) do
         Process.sleep(1000)
         destination = Enum.random(0..nodeIDSpace)
@@ -147,7 +145,6 @@ use GenServer
      {:ok}
     end
 
->>>>>>> b9c09e65d15a6bdb47f2310c82fc58bd8ca784c4
     def handle_cast({:first_join, firstGroup}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = IO.inspect state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
@@ -294,8 +291,6 @@ use GenServer
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
-<<<<<<< HEAD
-=======
     def handle_cast({:begin_route, numRequests}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
@@ -303,5 +298,4 @@ use GenServer
       sendRequest(Enum.to_list(1..numRequests), myID, nodeIDSpace)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
->>>>>>> b9c09e65d15a6bdb47f2310c82fc58bd8ca784c4
 end
