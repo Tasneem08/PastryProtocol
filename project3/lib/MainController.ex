@@ -159,8 +159,21 @@ defmodule MainController do
     {:noreply, {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
   end
 
+    def handle_cast({:route_finish, fromID, toID, hops}, state) do
+    {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
+    numRouted = numRouted + 1
+    numHops = numHops + hops
+    if (numRouted >= numNodes * numRequests) do
+      IO.puts "Number of Total Routes: #{numRouted}"
+      IO.puts "Number of Total Hops: #{numHops}"
+      IO.puts "Average hops per Route: #{numHops/numRouted}"
+      Process.exit(self(), :shutdown)
+    end
+    {:noreply, {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
+  end
+
   def handle_cast(:begin_route, state) do
-    {_, randList, _, _, _, _, _, _} = state
+    {_, randList, numRequests, _, _, _, _, _} = state
     for node <- randList do
         GenServer.cast(String.to_atom("child"<>Integer.to_string(node)), {:begin_route, numRequests})
     end

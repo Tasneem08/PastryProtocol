@@ -120,6 +120,7 @@ use GenServer
     end
     end
 
+<<<<<<< HEAD
     def addRow(routing_table,rowNum,newRow,i) do
      if(i>=4) do 
         routing_table
@@ -134,12 +135,25 @@ use GenServer
 
     @doc """
     """   
+=======
+    def sendRequest([i | rest], myID, nodeIDSpace) do
+        Process.sleep(1000)
+        destination = Enum.random(0..nodeIDSpace)
+        GenServer.cast(String.to_atom("child"<>Integer.to_string(myID)), {:route, "Route", myID, destination, -1})
+        sendRequest(rest, myID, nodeIDSpace)
+    end
+
+    def sendRequest([], myID, nodeIDSpace) do
+     {:ok}
+    end
+
+>>>>>>> b9c09e65d15a6bdb47f2310c82fc58bd8ca784c4
     def handle_cast({:first_join, firstGroup}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = IO.inspect state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       firstGroup = List.delete(firstGroup, myID)
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, firstGroup, numBits, lesserLeaf, largerLeaf, routing_table)
-        GenServer.cast(:global.whereis_name(@name), :join_finish)
+            GenServer.cast(:global.whereis_name(@name), :join_finish)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
@@ -246,7 +260,7 @@ use GenServer
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, newNode, numBits, lesserLeaf, largerLeaf, routing_table)
       # Send ack
-        GenServer.cast(String.to_atom("child"<>Integer.to_string(newNode)), :ack)
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(newNode)), :ack)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
@@ -255,10 +269,10 @@ use GenServer
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, allLeaf, numBits, lesserLeaf, largerLeaf, routing_table)
       for i <- lesserLeaf do
-         GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:update_me, myID})
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:update_me, myID})
       end
       for i <- largerLeaf do
-         GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:update_me, myID})
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:update_me, myID})
       end
       numOfBack = numOfBack + length(lesserLeaf) + length(largerLeaf)
       # Iterate over the routing_table and call Update_Me on valid entries
@@ -280,4 +294,14 @@ use GenServer
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
+<<<<<<< HEAD
+=======
+    def handle_cast({:begin_route, numRequests}, state) do
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+      numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
+      nodeIDSpace = round(Float.ceil(:math.pow(@base, numBits)))
+      sendRequest(Enum.to_list(1..numRequests), myID, nodeIDSpace)
+      {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+    end
+>>>>>>> b9c09e65d15a6bdb47f2310c82fc58bd8ca784c4
 end
