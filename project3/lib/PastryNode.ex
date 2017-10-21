@@ -153,7 +153,15 @@ use GenServer
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       firstGroup = List.delete(firstGroup, myID)
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, firstGroup, numBits, lesserLeaf, largerLeaf, routing_table)
-            GenServer.cast(:global.whereis_name(@name), :join_finish)
+
+      for i <- 0..(numBits-1) do
+        nextBit = String.to_integer(String.at(toBaseString(myID, numBits), i))
+        row = elem(routing_table, i)
+        updatedRow = Tuple.insert_at(Tuple.delete_at(row, nextBit), nextBit, myID)
+        Tuple.insert_at(Tuple.delete_at(routing_table, i), i, updatedRow)
+      end
+
+      GenServer.cast(:global.whereis_name(@name), :join_finish)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
@@ -168,8 +176,8 @@ use GenServer
         msg=="Join" ->
           samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
           if(hops == -1 && samePref > 0) do
-            for i <- 1..(samePref-1) do
-            GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:addRow, i,elem(routing_table,i)})
+            for i <- 0..(samePref-1) do
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:addRow, i, elem(routing_table,i)})
             end
           end
           GenServer.cast(String.to_atom("child"<>Integer.to_string(samePref)), {:addRow, samePref, elem(routing_table, samePref)})
@@ -279,7 +287,7 @@ use GenServer
                 IO.puts("Impossible")
           end  #end of cond       
         end #end of route "Route"
-      end#end of cond
+      end  #end of cond
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
     
@@ -324,7 +332,7 @@ use GenServer
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numOfBack = numOfBack - 1
       if(numOfBack == 0) do
-            GenServer.cast(:global.whereis_name(@name), :join_finish)
+        GenServer.cast(:global.whereis_name(@name), :join_finish)
       end
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
