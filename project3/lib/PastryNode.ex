@@ -170,7 +170,7 @@ use GenServer
           GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:addRow, i,elem(routing_table,i)})
           end
         end
-      GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:addRow, i,elem(routing_table,samePref)})
+        GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:addRow, i,elem(routing_table,samePref)})
 
       cond do
         #first condition
@@ -178,7 +178,7 @@ use GenServer
         
         diff=nodeIDSpace + 10
         nearest=-1
-        if(toId < myID) do
+        nearest = if(toId < myID) do
           for i<-lesserLeaf do
             if(abs(toId - i) < diff) do
               nearest=i
@@ -192,6 +192,7 @@ use GenServer
                 diff=abs(toId-i)
               end
           end
+        nearest
         end
 
         if(abs(toId - myID) > diff) do
@@ -237,13 +238,14 @@ use GenServer
           
           diff=nodeIDSpace + 10
           nearest=-1
-          if(toId < myID) do
+          nearest = if(toId < myID) do
             for i<-lesserLeaf do
               if(abs(toId - i) < diff) do
                 nearest=i
                 diff=abs(toId-i)
               end
             end
+
           else 
             for i<-largerLeaf do
                 if(abs(toId - i) < diff) do
@@ -251,6 +253,7 @@ use GenServer
                   diff=abs(toId-i)
                 end
             end
+            nearest
           end
 
           if(abs(toId - myID) > diff) do
