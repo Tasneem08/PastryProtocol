@@ -19,7 +19,7 @@ use GenServer
     @base 4
 
     def startlink(nodeID, numNodes) do
-       nodename = String.to_atom("child"<>Integer.to_string(nodeID))
+      nodename = String.to_atom("child"<>Integer.to_string(nodeID))
       GenServer.start_link(PastryNode, [nodeID, numNodes], name: nodename, debug: [:statistics, :trace])
       #debug: [:statistics, :trace]
     end
@@ -132,7 +132,7 @@ use GenServer
         updatedRow = Tuple.insert_at(Tuple.delete_at(row, i), i, elem(newRow, i))
         Tuple.insert_at(Tuple.delete_at(routing_table, rowNum), rowNum, updatedRow)
       end
-       addRow(routing_table, rowNum, newRow, i+1)
+       routing_table = addRow(routing_table, rowNum, newRow, i+1)
        routing_table
       end
     end
@@ -174,23 +174,18 @@ use GenServer
       samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
       nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))  # last condition
 
+      IO.inspect msg
       cond do
         msg=="Join" ->
           samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
           if(hops == -1 && samePref > 0) do
             for i <- 0..(samePref-1) do
-<<<<<<< HEAD
               GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, i, elem(routing_table,i)})
+              #Process.sleep(100)
             end
           end
           GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, samePref, elem(routing_table, samePref)})
-=======
-            GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, i, elem(routing_table,i)})
-            end
-          end
-          GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, samePref, elem(routing_table, samePref)})
-
->>>>>>> 7da1c3d38310102ea24e4fdf8264d86445831616
+          #Process.sleep(100)
         cond do
           #first condition
           (length(lesserLeaf)>0 && toId >= Enum.min(lesserLeaf) && toId <= myID) || (length(largerLeaf)>0 && toId >= Enum.max(largerLeaf) && toId >= myID) ->        
@@ -216,8 +211,10 @@ use GenServer
             if(abs(toId - myID) > diff) do
               GenServer.cast(String.to_atom("child"<>Integer.to_string(nearest)), {:route,msg,fromId,toId,hops+1}) 
             else #I am the nearest
+              IO.puts "in leaf"
               allLeaf = []
               allLeaf ++ [myID] ++ [lesserLeaf] ++ [largerLeaf] # check syntax
+              IO.inspect GenServer.whereis(String.to_atom("child"<>Integer.to_string(toId)))
               GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
             end 
           #cond else if       
@@ -226,25 +223,19 @@ use GenServer
           length(largerLeaf)<4 && length(largerLeaf)>0 && toId > Enum.max(largerLeaf) ->
             GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:route,msg,fromId,toId,hops+1})
           length(lesserLeaf)==0 && toId<myID || length(largerLeaf)==0 && toId>myID -> #I am the nearest
+            IO.puts "in leaf"
             allLeaf = []
             allLeaf ++ [myID] ++ [lesserLeaf]++[largerLeaf] # check syntax
+            IO.inspect GenServer.whereis(String.to_atom("child"<>Integer.to_string(toId)))
             GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
           elem(elem(routing_table, samePref), nextBit) != -1 ->
             # row = elem(routing_table, samePref)
-<<<<<<< HEAD
-            GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref), numBits))), {:route,msg,fromId,toId,hops+1})
-=======
             GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref), nextBit))), {:route,msg,fromId,toId,hops+1})
->>>>>>> 7da1c3d38310102ea24e4fdf8264d86445831616
           toId > myID ->
             GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:route,msg,fromId,toId,hops+1})
           #not in both
           toId < myID ->
-<<<<<<< HEAD
-            GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(lesserLeaf))), {:route,msg,fromId,toId,hops+1})
-=======
             GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:route,msg,fromId,toId,hops+1})
->>>>>>> 7da1c3d38310102ea24e4fdf8264d86445831616
           #not in both ..else condition
           true ->
             IO.puts("Impossible")
@@ -307,7 +298,8 @@ use GenServer
     #Add row
     def handle_cast({:addRow,rowNum,newRow}, state) do
         {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
-        routing_table=addRow(routing_table,rowNum,newRow,0)   
+        routing_table=addRow(routing_table,rowNum,newRow,0)
+        IO.inspect routing_table   
         {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
@@ -321,6 +313,7 @@ use GenServer
     end
 
     def handle_cast({:add_leaf, allLeaf}, state) do
+      IO.puts "In addLeaf"
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, allLeaf, numBits, lesserLeaf, largerLeaf, routing_table)
@@ -333,10 +326,12 @@ use GenServer
       numOfBack = numOfBack + length(lesserLeaf) + length(largerLeaf)
       # Iterate over the routing_table and call Update_Me on valid entries
         numOfBack = tellRoutingNodes(routing_table, 0, 0, numBits, myID, numOfBack)
-      for i <- Enum.to_list(0..numBits-1) do
+      for i <- 0..(numBits-1) do
+        for j <- 0..3 do
           row = elem(routing_table, i)
-          updatedRow = Tuple.insert_at(Tuple.delete_at(row, i), i, myID)
+          updatedRow = Tuple.insert_at(Tuple.delete_at(row, j), j, myID)
           Tuple.insert_at(Tuple.delete_at(routing_table, i), i, updatedRow)
+        end
       end
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end

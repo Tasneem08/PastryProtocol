@@ -78,8 +78,8 @@ defmodule MainController do
     IO.inspect state
     {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
     startID = Enum.at(randList, Enum.random(0..(numJoined-1)))
-    gen_server = "child" <> Integer.to_string(startID)
-    GenServer.cast(String.to_atom(gen_server), {:route, "Join", startID, Enum.at(randList, numJoined), -1})
+    PastryNode.startlink(Enum.at(randList, numJoined), numNodes)
+    GenServer.cast(String.to_atom("child"<>Integer.to_string(startID)), {:route, "Join", startID, Enum.at(randList, numJoined), -1})
     {:noreply, {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
   end
 
