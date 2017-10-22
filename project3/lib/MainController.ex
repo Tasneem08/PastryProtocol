@@ -29,7 +29,7 @@ defmodule MainController do
       {_, pid} = PastryNode.startlink(nodeID, numNodes)
       pid
     end 
-    IO.inspect list_pid
+    # IO.inspect list_pid
     # First Join
     for pid <- list_pid do
       GenServer.cast(pid, {:first_join, firstGroup})
@@ -39,7 +39,7 @@ defmodule MainController do
 
   def handle_cast(:join_finish, state) do
     {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
-    IO.inspect "Join finish #{numJoined}"
+    # IO.inspect "Join finish #{numJoined}"
     numFirstGroup = if (numNodes <= 1024) do numNodes else 1024 end
     numJoined = numJoined + 1
     if(numJoined >= numFirstGroup) do
@@ -55,7 +55,7 @@ defmodule MainController do
 
     def handle_cast({:route_finish, fromID, toID, hops}, state) do
     {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
-    IO.inspect "Something finished.. From #{fromID} to #{toID}"
+    # IO.inspect "Something finished.. From #{fromID} to #{toID}"
     numRouted = numRouted + 1
     numHops = numHops + hops
     if (numRouted >= numNodes * numRequests) do
@@ -76,7 +76,6 @@ defmodule MainController do
   end
 
     def handle_cast(:second_join, state) do
-    IO.inspect state
     {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
     startID = Enum.at(randList, Enum.random(0..(numJoined-1)))
     PastryNode.startlink(Enum.at(randList, numJoined), numNodes)

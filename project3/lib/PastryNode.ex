@@ -20,7 +20,7 @@ use GenServer
 
     def startlink(nodeID, numNodes) do
       nodename = String.to_atom("child"<>Integer.to_string(nodeID))
-      GenServer.start_link(PastryNode, [nodeID, numNodes], name: nodename, debug: [:statistics, :trace])
+      GenServer.start_link(PastryNode, [nodeID, numNodes], name: nodename)
       #debug: [:statistics, :trace]
     end
 
@@ -174,7 +174,7 @@ use GenServer
 
         cond do
           #first condition
-          (length(lesserLeaf)>0 && toId >= Enum.min(lesserLeaf) && toId <= myID) || (length(largerLeaf)>0 && toId >= Enum.max(largerLeaf) && toId >= myID) ->        
+          (length(lesserLeaf)>0 && toId >= Enum.min(lesserLeaf) && toId <= myID) || (length(largerLeaf)>0 && toId <= Enum.max(largerLeaf) && toId >= myID) ->        
             diff=nodeIDSpace + 10
             nearest=-1
             nearest = if(toId < myID) do
@@ -197,10 +197,10 @@ use GenServer
             if(abs(toId - myID) > diff) do
               GenServer.cast(String.to_atom("child"<>Integer.to_string(nearest)), {:route,msg,fromId,toId,hops+1}) 
             else #I am the nearest
-              IO.puts "in leaf"
+              # IO.puts "in leaf"
               allLeaf = []
               allLeaf ++ [myID] ++ [lesserLeaf] ++ [largerLeaf] # check syntax
-              IO.inspect GenServer.whereis(String.to_atom("child"<>Integer.to_string(toId)))
+              # GenServer.whereis(String.to_atom("child"<>Integer.to_string(toId)))
               GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
             end 
           #cond else if       
@@ -208,11 +208,11 @@ use GenServer
             GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:route,msg,fromId,toId,hops+1})
           length(largerLeaf)<4 && length(largerLeaf)>0 && toId > Enum.max(largerLeaf) ->
             GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:route,msg,fromId,toId,hops+1})
-          length(lesserLeaf)==0 && toId<myID || length(largerLeaf)==0 && toId>myID -> #I am the nearest
-            IO.puts "in leaf"
+          (length(lesserLeaf)==0 && toId<myID) || (length(largerLeaf)==0 && toId>myID) -> #I am the nearest
+            # IO.puts "in leaf"
             allLeaf = []
             allLeaf ++ [myID] ++ [lesserLeaf]++[largerLeaf] # check syntax
-            IO.inspect GenServer.whereis(String.to_atom("child"<>Integer.to_string(toId)))
+            # GenServer.whereis(String.to_atom("child"<>Integer.to_string(toId)))
             GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
           elem(elem(routing_table, samePref), nextBit) != -1 ->
             # row = elem(routing_table, samePref)
@@ -228,9 +228,9 @@ use GenServer
         end
      else
         # msg=="Route" ->
-        IO.inspect "My id is #{myID} and destination is #{toId}"
+        # IO.inspect "My id is #{myID} and destination is #{toId}"
           if myID == toId do
-            IO.inspect "Reached Real Destination!"
+            # IO.inspect "Reached Real Destination!"
             GenServer.cast(:global.whereis_name(@name), {:route_finish,fromId,toId,hops+1})# to be implemented
           else 
             samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
@@ -285,7 +285,7 @@ use GenServer
     
     #Add row
     def handle_cast({:addRow,rowNum,newRow}, state) do 
-       IO.inspect "Updating #{rowNum}th row."
+      #  IO.inspect "Updating #{rowNum}th row."
         {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
         routing_table =  Tuple.insert_at(Tuple.delete_at(routing_table, rowNum), rowNum, newRow)  
         {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
@@ -301,7 +301,7 @@ use GenServer
     end
 
     def handle_cast({:add_leaf, allLeaf}, state) do
-      IO.puts "In addLeaf"
+      # IO.puts "In addLeaf"
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, allLeaf, numBits, lesserLeaf, largerLeaf, routing_table)
