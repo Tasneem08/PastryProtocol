@@ -161,6 +161,7 @@ defmodule MainController do
 
     def handle_cast({:route_finish, fromID, toID, hops}, state) do
     {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
+    IO.inspect "Something finished.. #{numRouted}"
     numRouted = numRouted + 1
     numHops = numHops + hops
     if (numRouted >= numNodes * numRequests) do
