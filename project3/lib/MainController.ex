@@ -39,12 +39,12 @@ defmodule MainController do
 
   def handle_cast(:join_finish, state) do
     {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
+    IO.inspect "Join finish #{numJoined}"
     numFirstGroup = if (numNodes <= 1024) do numNodes else 1024 end
     numJoined = numJoined + 1
     if(numJoined >= numFirstGroup) do
       if(numJoined >= numNodes) do
-        #GenServer.cast(:global.whereis_name(@name), :begin_route)
-        x = 1
+        GenServer.cast(:global.whereis_name(@name), :begin_route)
       else
         GenServer.cast(:global.whereis_name(@name), :second_join)
       end
