@@ -128,8 +128,12 @@ use GenServer
     """   
     def sendRequest([i | rest], myID, nodeIDSpace) do
         Process.sleep(1000)
-        destination = Enum.random(0..nodeIDSpace-1)
-        GenServer.cast(String.to_atom("child"<>Integer.to_string(myID)), {:route, "Route", myID, destination, -1})
+        listneigh = Enum.to_list(0..nodeIDSpace-1)
+        destination = Enum.random(List.delete(listneigh, myID))
+        if destination == myID do
+          IO.inspect "@@@@@@@@@@@@@  PICKED SAME DEST  @@@@@@@@@@@@"
+        end
+        GenServer.cast(String.to_atom("child"<>Integer.to_string(myID)), {:route, "Route", myID, destination, 0})
         sendRequest(rest, myID, nodeIDSpace)
     end
 
@@ -165,7 +169,7 @@ use GenServer
      if  msg=="Join" do
           samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
           nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))
-          if(hops == -1 && samePref > 0) do
+          if(hops == 0 && samePref > 0) do
             for i <- 0..(samePref-1) do
             GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, i, elem(routing_table,i)})
             end

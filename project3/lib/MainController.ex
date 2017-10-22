@@ -57,6 +57,9 @@ defmodule MainController do
     {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
     # IO.inspect "Something finished.. From #{fromID} to #{toID}"
     numRouted = numRouted + 1
+    if hops < 0 do
+       IO.inspect "@@@@@@@@@@@@@  NEGATIVE HOPS  @@@@@@@@@@@@"
+    end
     numHops = numHops + hops
     if (numRouted >= numNodes * numRequests) do
       IO.puts "Number of Total Routes: #{numRouted}"
@@ -79,7 +82,7 @@ defmodule MainController do
     {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth} = state
     startID = Enum.at(randList, Enum.random(0..(numJoined-1)))
     PastryNode.startlink(Enum.at(randList, numJoined), numNodes)
-    GenServer.cast(String.to_atom("child"<>Integer.to_string(startID)), {:route, "Join", startID, Enum.at(randList, numJoined), -1})
+    GenServer.cast(String.to_atom("child"<>Integer.to_string(startID)), {:route, "Join", startID, Enum.at(randList, numJoined), 0})
     {:noreply, {numNodes, randList, numRequests, numJoined, numNotInBoth, numRouted, numHops, numRouteNotInBoth}}
   end
 
