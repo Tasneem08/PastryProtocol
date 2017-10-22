@@ -141,7 +141,7 @@ use GenServer
     """   
     def sendRequest([i | rest], myID, nodeIDSpace) do
         Process.sleep(1000)
-        destination = Enum.random(0..nodeIDSpace)
+        destination = Enum.random(0..nodeIDSpace-1)
         GenServer.cast(String.to_atom("child"<>Integer.to_string(myID)), {:route, "Route", myID, destination, -1})
         sendRequest(rest, myID, nodeIDSpace)
     end
@@ -171,21 +171,35 @@ use GenServer
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       nodeIDSpace = round(Float.ceil(:math.pow(@base, numBits)))
-      samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
-      nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))  # last condition
+    #   samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
+    #   nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))  # last condition
 
+<<<<<<< HEAD
       IO.inspect msg
       cond do
         msg=="Join" ->
+=======
+      
+     if  msg=="Join" do
+>>>>>>> d1c5a2c9130fd6266ee995f579bdae493b1772fb
           samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
+          nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))
           if(hops == -1 && samePref > 0) do
             for i <- 0..(samePref-1) do
+<<<<<<< HEAD
               GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, i, elem(routing_table,i)})
               #Process.sleep(100)
             end
           end
           GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, samePref, elem(routing_table, samePref)})
           #Process.sleep(100)
+=======
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, i, elem(routing_table,i)})
+            end
+          end
+          GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, samePref, elem(routing_table, samePref)})
+
+>>>>>>> d1c5a2c9130fd6266ee995f579bdae493b1772fb
         cond do
           #first condition
           (length(lesserLeaf)>0 && toId >= Enum.min(lesserLeaf) && toId <= myID) || (length(largerLeaf)>0 && toId >= Enum.max(largerLeaf) && toId >= myID) ->        
@@ -240,13 +254,15 @@ use GenServer
           true ->
             IO.puts("Impossible")
         end
-        msg=="Route" ->
-          #GenServer.cast(String.to_atom("child"<>Integer.to_string(max(largerLeaf)), {:route,fromId,toId,hops+1})
+     else
+        # msg=="Route" ->
+        IO.inspect "My id is #{myID} and destination is #{toId}"
           if myID == toId do
+            IO.inspect "Reached Real Destination!"
             GenServer.cast(:global.whereis_name(@name), {:route_finish,fromId,toId,hops+1})# to be implemented
           else 
             samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
-          
+            nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))
           cond do
             #first condition
             (length(lesserLeaf)>0 && toId >= Enum.min(lesserLeaf) && toId < myID) || (length(largerLeaf)>0 && toId <= Enum.max(largerLeaf) && toId > myID) ->
@@ -270,27 +286,27 @@ use GenServer
               end
 
               if(abs(toId - myID) > diff) do
-                GenServer.cast(String.to_atom("child"<>Integer.to_string(nearest)), {:route,msg,fromId,toId,hops+1})
+                GenServer.cast(String.to_atom("child"<>Integer.to_string(nearest)), {:route,"Route",fromId,toId,hops+1})
               else #I am the nearest
                 GenServer.cast(:global.whereis_name(@name), {:route_finish,fromId,toId,hops+1})
               end                      
               
               length(lesserLeaf)<4 && length(lesserLeaf)>0 && toId < Enum.min(lesserLeaf) ->
-                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:route,msg,fromId,toId,hops+1})
+                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:route,"Route",fromId,toId,hops+1})
               length(largerLeaf)<4 && length(largerLeaf)>0 && toId > Enum.max(largerLeaf) ->
-                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:route,msg,fromId,toId,hops+1})
+                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:route,"Route",fromId,toId,hops+1})
               (length(lesserLeaf)==0 && toId<myID) || (length(largerLeaf)==0 && toId>myID) -> #I am the nearest
                 GenServer.cast(:global.whereis_name(@name), {:route_finish,fromId,toId,hops+1})
-                elem(elem(routing_table, samePref), nextBit) != -1 ->
-                GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref), nextBit))), {:route,msg,fromId,toId,hops+1})
+               elem(elem(routing_table, samePref), nextBit) != -1 ->
+                GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref), nextBit))), {:route,"Route",fromId,toId,hops+1})
               toId > myID ->
-                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:route,msg,fromId,toId,hops+1})
+                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:route,"Route",fromId,toId,hops+1})
               toId < myID ->
-                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:route,msg,fromId,toId,hops+1})
+                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:route,"Route",fromId,toId,hops+1})
               true ->
                 IO.puts("Impossible")
           end  #end of cond       
-        end #end of route "Route"
+        end #end of if myId = toId
       end  #end of cond
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
