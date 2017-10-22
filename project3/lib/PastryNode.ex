@@ -162,10 +162,7 @@ use GenServer
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       nodeIDSpace = round(Float.ceil(:math.pow(@base, numBits)))
-    #   samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
-    #   nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))  # last condition
 
-      
      if  msg=="Join" do
           samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
           nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))
@@ -204,7 +201,6 @@ use GenServer
               # IO.puts "in leaf"
               allLeaf = []
               allLeaf ++ [myID] ++ [lesserLeaf] ++ [largerLeaf] # check syntax
-              # GenServer.whereis(String.to_atom("child"<>Integer.to_string(toId)))
               GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
             end 
           #cond else if       
