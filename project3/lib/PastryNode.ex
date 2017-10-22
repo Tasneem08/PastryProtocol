@@ -121,6 +121,8 @@ use GenServer
     end
 
     def addRow(routing_table, rowNum, newRow, i) do
+
+    IO.puts "addrow"
      if(i==4) do 
         routing_table
      else 
@@ -149,7 +151,7 @@ use GenServer
     end
 
     def handle_cast({:first_join, firstGroup}, state) do
-      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = IO.inspect state
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       firstGroup = List.delete(firstGroup, myID)
       {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, firstGroup, numBits, lesserLeaf, largerLeaf, routing_table)
@@ -166,7 +168,7 @@ use GenServer
     end
 
     def handle_cast({:route, msg, fromId, toId, hops}, state) do
-      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = IO.inspect state
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       nodeIDSpace = round(Float.ceil(:math.pow(@base, numBits)))
       samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
@@ -177,11 +179,10 @@ use GenServer
           samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
           if(hops == -1 && samePref > 0) do
             for i <- 0..(samePref-1) do
-            GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:addRow, i, elem(routing_table,i)})
+              GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, i, elem(routing_table,i)})
             end
           end
-          GenServer.cast(String.to_atom("child"<>Integer.to_string(samePref)), {:addRow, samePref, elem(routing_table, samePref)})
-
+          GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, samePref, elem(routing_table, samePref)})
         cond do
           #first condition
           (length(lesserLeaf)>0 && toId >= Enum.min(lesserLeaf) && toId <= myID) || (length(largerLeaf)>0 && toId >= Enum.max(largerLeaf) && toId >= myID) ->        
@@ -215,19 +216,19 @@ use GenServer
           length(lesserLeaf)<4 && length(lesserLeaf)>0 && toId < Enum.min(lesserLeaf) ->
             GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:route,msg,fromId,toId,hops+1})
           length(largerLeaf)<4 && length(largerLeaf)>0 && toId > Enum.max(largerLeaf) ->
-            GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(lesserLeaf))), {:route,msg,fromId,toId,hops+1})
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:route,msg,fromId,toId,hops+1})
           length(lesserLeaf)==0 && toId<myID || length(largerLeaf)==0 && toId>myID -> #I am the nearest
             allLeaf = []
             allLeaf ++ [myID] ++ [lesserLeaf]++[largerLeaf] # check syntax
             GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
           elem(elem(routing_table, samePref), nextBit) != -1 ->
             # row = elem(routing_table, samePref)
-            GenServer.cast(String.to_atom("child"<>Integer.to_string(numBits)), {:route,msg,fromId,toId,hops+1})
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref), numBits))), {:route,msg,fromId,toId,hops+1})
           toId > myID ->
             GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:route,msg,fromId,toId,hops+1})
           #not in both
           toId < myID ->
-            GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:route,msg,fromId,toId,hops+1})
+            GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(lesserLeaf))), {:route,msg,fromId,toId,hops+1})
           #not in both ..else condition
           true ->
             IO.puts("Impossible")
@@ -292,7 +293,7 @@ use GenServer
     end
     
     #Add row
-    def handle_cast({:addRow,rowNum,newRow,i}, state) do
+    def handle_cast({:addRow,rowNum,newRow}, state) do
         {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
         routing_table=addRow(routing_table,rowNum,newRow,0)   
         {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
@@ -330,6 +331,7 @@ use GenServer
 
     def handle_cast({:ack}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+      #IO.inspect state
       numOfBack = numOfBack - 1
       if(numOfBack == 0) do
         GenServer.cast(:global.whereis_name(@name), :join_finish)
