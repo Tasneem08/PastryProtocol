@@ -121,20 +121,7 @@ use GenServer
     end
 
     def addRow(routing_table, rowNum, newRow, i) do
-
-    IO.puts "addrow"
-     if(i==4) do 
-        routing_table
-     else 
-      if elem(elem(routing_table, rowNum),i) == -1 do
-        #elem(elem(routing_table, rowNum),i) = elem(newRow,i)
-        row = elem(routing_table, rowNum)
-        updatedRow = Tuple.insert_at(Tuple.delete_at(row, i), i, elem(newRow, i))
-        Tuple.insert_at(Tuple.delete_at(routing_table, rowNum), rowNum, updatedRow)
-      end
-       routing_table = addRow(routing_table, rowNum, newRow, i+1)
-       routing_table
-      end
+        routing_table = Tuple.insert_at(Tuple.delete_at(routing_table, rowNum), rowNum, newRow)
     end
 
     @doc """
@@ -174,32 +161,17 @@ use GenServer
     #   samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
     #   nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))  # last condition
 
-<<<<<<< HEAD
-      IO.inspect msg
-      cond do
-        msg=="Join" ->
-=======
       
      if  msg=="Join" do
->>>>>>> d1c5a2c9130fd6266ee995f579bdae493b1772fb
           samePref = samePrefix(toBaseString(myID, numBits), toBaseString(toId, numBits), 0)
           nextBit = String.to_integer(String.at(toBaseString(toId, numBits), samePref))
           if(hops == -1 && samePref > 0) do
             for i <- 0..(samePref-1) do
-<<<<<<< HEAD
-              GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, i, elem(routing_table,i)})
-              #Process.sleep(100)
-            end
-          end
-          GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, samePref, elem(routing_table, samePref)})
-          #Process.sleep(100)
-=======
             GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, i, elem(routing_table,i)})
             end
           end
           GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:addRow, samePref, elem(routing_table, samePref)})
 
->>>>>>> d1c5a2c9130fd6266ee995f579bdae493b1772fb
         cond do
           #first condition
           (length(lesserLeaf)>0 && toId >= Enum.min(lesserLeaf) && toId <= myID) || (length(largerLeaf)>0 && toId >= Enum.max(largerLeaf) && toId >= myID) ->        
