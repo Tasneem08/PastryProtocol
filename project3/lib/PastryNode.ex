@@ -284,10 +284,10 @@ use GenServer
     end
     
     #Add row
-    def handle_cast({:addRow,rowNum,newRow}, state) do
+    def handle_cast({:addRow,rowNum,newRow}, state) do 
+       IO.inspect "Updating #{rowNum}th row."
         {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
-        routing_table=addRow(routing_table,rowNum,newRow,0)
-        IO.inspect routing_table   
+        routing_table =  Tuple.insert_at(Tuple.delete_at(routing_table, rowNum), rowNum, newRow)  
         {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 

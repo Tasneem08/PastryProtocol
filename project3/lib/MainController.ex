@@ -22,7 +22,7 @@ defmodule MainController do
     numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
     nodeIDSpace = round(Float.ceil(:math.pow(@base, numBits)))
     numFirstGroup = if (numNodes <= 1024) do numNodes else 1024 end
-    randList = Enum.shuffle(Enum.to_list(0..(numNodes-1)))
+    randList = Enum.shuffle(Enum.to_list(0..(nodeIDSpace-1)))
     firstGroup = Enum.slice(randList, 0..(numFirstGroup-1))
 
     list_pid = for nodeID <- firstGroup do
@@ -45,6 +45,7 @@ defmodule MainController do
     if(numJoined >= numFirstGroup) do
       if(numJoined >= numNodes) do
         GenServer.cast(:global.whereis_name(@name), :begin_route)
+        # IO.inspect "DONE JOINING"
       else
         GenServer.cast(:global.whereis_name(@name), :second_join)
       end
