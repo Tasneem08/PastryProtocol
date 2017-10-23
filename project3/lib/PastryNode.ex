@@ -158,6 +158,44 @@ use GenServer
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
+    def handle_cast({:remove_me, theId}, state) do
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+      numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
+          if theId > myID && Enum.member?(largerLeaf, theId) do
+              List.delete(largerLeaf,theId)
+              if length(largerLeaf) > 0 do
+                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:request_leaf_without, theId,myID})
+              end
+          end
+
+          if theId < myID && Enum.member?(lesserLeaf, theId) do
+              List.delete(lesserLeaf,theId)
+              if length(lesserLeaf) > 0 do
+                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(largerLeaf))), {:request_leaf_without, theId,myID})
+              end
+          end
+
+        samePref = samePrefix(toBaseString(myID, numBits), toBaseString(nodeID, numBits), 0)
+        nextBit = String.to_integer(String.at(toBaseString(nodeID, numBits), samePref))
+
+          routing_table = if elem(elem(routing_table, samePref), nextBit) == theId do
+              row = elem(routing_table, samePref)
+              updatedRow = Tuple.insert_at(Tuple.delete_at(row, nextBit), nextBit, -1)
+              Tuple.insert_at(Tuple.delete_at(routing_table, samePref), samePref, updatedRow)
+            else
+              routing_table
+            end
+
+          for i <- 0..3 do
+            if(elem(elem(routing_table, samePref), i) != myId && elem(elem(routing_table, samePref), i) != theId && elem(elem(routing_table, samePref), i) != -1) do
+              GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref)), {:requestInTable, samePref ,nextBit})
+            end   
+          end
+          
+          {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+        end
+
+
     def handle_cast({:route, msg, fromId, toId, hops}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
