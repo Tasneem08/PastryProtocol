@@ -206,8 +206,8 @@ use GenServer
               end
           end
 
-        samePref = samePrefix(toBaseString(myID, numBits), toBaseString(nodeID, numBits), 0)
-        nextBit = String.to_integer(String.at(toBaseString(nodeID, numBits), samePref))
+        samePref = samePrefix(toBaseString(myID, numBits), toBaseString(theId, numBits), 0)
+        nextBit = String.to_integer(String.at(toBaseString(theId, numBits), samePref))
 
           routing_table = if elem(elem(routing_table, samePref), nextBit) == theId do
               row = elem(routing_table, samePref)
@@ -218,8 +218,8 @@ use GenServer
             end
 
           for i <- 0..3 do
-            if ((elem(elem(routing_table, samePref), i)) != myId && elem(elem(routing_table, samePref), i) != theId && elem(elem(routing_table, samePref), i) != -1) do
-              GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref)))), {:requestInTable, samePref ,nextBit})
+            if ((elem(elem(routing_table, samePref), i)) != myID && elem(elem(routing_table, samePref), i) != theId && elem(elem(routing_table, samePref), i) != -1) do
+              GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref), i))), {:requestInTable, samePref ,nextBit})
             end   
           end
           
