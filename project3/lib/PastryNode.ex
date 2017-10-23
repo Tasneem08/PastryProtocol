@@ -20,7 +20,7 @@ use GenServer
 
     def startlink(nodeID, numNodes) do
       nodename = String.to_atom("child"<>Integer.to_string(nodeID))
-      GenServer.start_link(PastryNode, [nodeID, numNodes], name: nodename)
+      GenServer.start_link(PastryNode, [nodeID, numNodes], name: nodename, debug: [:statistics, :trace])
       #debug: [:statistics, :trace]
     end
 
@@ -120,15 +120,11 @@ use GenServer
     end
     end
 
-    def addRow(routing_table, rowNum, newRow, i) do
-        routing_table = Tuple.insert_at(Tuple.delete_at(routing_table, rowNum), rowNum, newRow)
-    end
-
     def leafRecover([], myID, lesserLeaf, largerLeaf) do
        {lesserLeaf, largerLeaf}
     end
 
-def leafRecover([nodeID | newList], myID, lesserLeaf, largerLeaf) do
+   def leafRecover([nodeID | newList], myID, lesserLeaf, largerLeaf) do
       largerLeaf = if nodeID > myID && largerLeaf != nil && !Enum.member?(largerLeaf, nodeID) do
         if length(largerLeaf) < 4 do
           largerLeaf ++ [nodeID]
@@ -207,12 +203,15 @@ def leafRecover([nodeID | newList], myID, lesserLeaf, largerLeaf) do
 
 
      def handle_cast({:table_recover, row1, column ,newId}, state) do
+    #  IO.inspect "row = #{row1}, column = #{column}"
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
-        routing_table=if ((elem(elem(routing_table, row1), column)) != -1) do
+      # IO.inspect (elem(elem(routing_table, row1), column))
+        if ((elem(elem(routing_table, row1), column)) == -1) do
+            # IO.inspect "in here"
             row = elem(routing_table, row1)
             updatedRow = Tuple.insert_at(Tuple.delete_at(row, column), column, newId)
-            Tuple.insert_at(Tuple.delete_at(routing_table, row), row, updatedRow)
-            routing_table        
+           # routing_table = 
+           Tuple.insert_at(Tuple.delete_at(routing_table, row1), row1, updatedRow)     
         end
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
      end
@@ -231,7 +230,7 @@ def leafRecover([nodeID | newList], myID, lesserLeaf, largerLeaf) do
           if theId < myID && Enum.member?(lesserLeaf, theId) do
               lesserLeaf = List.delete(lesserLeaf,theId)
               if length(lesserLeaf) > 0 do
-                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(largerLeaf))), {:request_leaf_without, theId,myID})
+                GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(lesserLeaf))), {:request_leaf_without, theId,myID})
               end
           end
 
