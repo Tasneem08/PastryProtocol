@@ -57,7 +57,7 @@ defmodule MainController do
     {numNodes, randList, numRequests, numJoined, numRouted, numHops, nodesToKill} = state
     # IO.inspect "Join finish #{numJoined}"
      for i <- Enum.to_list(0..nodesToKill-1) do
-        GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.at(randList,i))), :killYourself)
+        GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.at(randList,i))), {:killYourself,randList})
      end
 
      GenServer.cast(:global.whereis_name(@name), :begin_route)

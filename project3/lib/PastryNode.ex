@@ -135,7 +135,7 @@ use GenServer
           largerLeaf ++ [nodeID]
         else
           if nodeID < Enum.max(largerLeaf) do
-            largerLeaf = List.delete(Enum.max(largerLeaf))
+            largerLeaf = List.delete(largerLeaf, Enum.max(largerLeaf))
             largerLeaf ++ [nodeID]
           end
         end
@@ -173,10 +173,10 @@ use GenServer
     end
 
     def handle_cast({:first_join, firstGroup}, state) do
-      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
-      numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
-      firstGroup = List.delete(firstGroup, myID)
-      {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, firstGroup, numBits, lesserLeaf, largerLeaf, routing_table)
+        {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+        numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
+        firstGroup = List.delete(firstGroup, myID)
+        {lesserLeaf, largerLeaf, routing_table} = addBuffer(myID, firstGroup, numBits, lesserLeaf, largerLeaf, routing_table)
 
       for i <- 0..(numBits-1) do
         nextBit = String.to_integer(String.at(toBaseString(myID, numBits), i))
@@ -185,15 +185,17 @@ use GenServer
         Tuple.insert_at(Tuple.delete_at(routing_table, i), i, updatedRow)
       end
 
-      GenServer.cast(:global.whereis_name(@name), :join_finish)
-      {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+        GenServer.cast(:global.whereis_name(@name), :join_finish)
+        {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
      def handle_cast({:requestInTable, samePre,column}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+      
       if ((elem(elem(routing_table, samePre), column)) != -1) do
         GenServer.cast(:global.whereis_name(@name), {:table_recover,samePre,elem(elem(routing_table, samePre), column)})   
       end
+
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
      end
 
@@ -446,6 +448,7 @@ use GenServer
       GenServer.cast(String.to_atom("child"<>Integer.to_string(sender)), {:leaf_recover, temp})
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
+    
     def handle_cast({:killYourself, randList}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       randList = List.delete(randList, myID)
