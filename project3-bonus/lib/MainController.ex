@@ -17,14 +17,14 @@ defmodule MainController do
   end
   @doc """
   """   
-  def handle_cast(:go, state) do
+  def handle_cast(:start_protocol, state) do
     {numNodes, _, numRequests, numJoined, numRouted, numHops, nodesToKill} = state
     numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
     nodeIDSpace = round(Float.ceil(:math.pow(@base, numBits)))
     numFirstGroup = if (numNodes <= 1024) do numNodes else 1024 end
     randList = Enum.shuffle(Enum.to_list(0..(nodeIDSpace-1)))
     firstGroup = Enum.slice(randList, 0..(numFirstGroup-1))
-
+    
     list_pid = for nodeID <- firstGroup do
       {_, pid} = PastryNode.startlink(nodeID, numNodes)
       pid
@@ -32,7 +32,7 @@ defmodule MainController do
     # IO.inspect list_pid
     # First Join
     for pid <- list_pid do
-      GenServer.cast(pid, {:first_join, firstGroup})
+      GenServer.cast(pid, {:pastryInit, firstGroup})
     end
     {:noreply, {numNodes, randList, numRequests, numJoined, numRouted, numHops, nodesToKill}}
   end
@@ -63,11 +63,11 @@ defmodule MainController do
      end
      end
 
-     GenServer.cast(:global.whereis_name(@name), :begin_route)
+     GenServer.cast(:global.whereis_name(@name), :initiate_routing)
     {:noreply, state}
   end
 
-    def handle_cast({:route_finish, fromID, toID, hops}, state) do
+    def handle_cast({:route_finish, hops}, state) do
     {numNodes, randList, numRequests, numJoined, numRouted, numHops, nodesToKill} = state
     # IO.inspect "Something finished.. From #{fromID} to #{toID}"
     numRouted = numRouted + 1
@@ -85,10 +85,10 @@ defmodule MainController do
     {:noreply, {numNodes, randList, numRequests, numJoined, numRouted, numHops, nodesToKill}}
   end
 
-  def handle_cast(:begin_route, state) do
+  def handle_cast(:initiate_routing, state) do
     {_, randList, numRequests, _, _, _, _} = state
     for node <- randList do
-        GenServer.cast(String.to_atom("child"<>Integer.to_string(node)), {:begin_route, numRequests})
+        GenServer.cast(String.to_atom("child"<>Integer.to_string(node)), {:begin_routing, numRequests})
     end
     {:noreply, state}
   end
@@ -112,7 +112,7 @@ defmodule MainController do
     {:ok, master_pid} = start_link(numNodes, numRequests, numJoined, numRouted, numHops, nodesToKill)
     :global.register_name(@name, master_pid)
     :global.sync()
-    GenServer.cast(:global.whereis_name(@name), :go)
+    GenServer.cast(:global.whereis_name(@name), :start_protocol)
     
     :timer.sleep(:infinity)
   end
