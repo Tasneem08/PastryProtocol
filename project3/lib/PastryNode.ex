@@ -146,7 +146,7 @@ use GenServer
           lesserLeaf ++ [nodeID]
         else
           if nodeID > Enum.min(lesserLeaf) do
-            lesserLeaf = List.delete(Enum.min(lesserLeaf))
+            lesserLeaf = List.delete(lesserLeaf, Enum.min(lesserLeaf))
             lesserLeaf ++ [nodeID]
           end
         end
