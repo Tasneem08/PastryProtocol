@@ -56,9 +56,11 @@ defmodule MainController do
   def handle_cast(:create_failures, state) do
     {numNodes, randList, numRequests, numJoined, numRouted, numHops, nodesToKill} = state
     # IO.inspect "Join finish #{numJoined}"
+    if nodesToKill > 0 do
      for i <- Enum.to_list(0..nodesToKill-1) do
        Process.unlink(GenServer.whereis((String.to_atom("child"<>Integer.to_string(Enum.at(randList,i))))))
        GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.at(randList,i))), {:killYourself,randList})
+     end
      end
 
      GenServer.cast(:global.whereis_name(@name), :begin_route)
@@ -73,7 +75,8 @@ defmodule MainController do
        IO.inspect "@@@@@@@@@@@@@  NEGATIVE HOPS  @@@@@@@@@@@@"
     end
     numHops = numHops + hops
-    if (numRouted >= numNodes * numRequests) do
+    if (numRouted >= (numNodes - nodesToKill) * numRequests) do
+      IO.puts "Number of Total Killed Nodes: #{nodesToKill}"
       IO.puts "Number of Total Routes: #{numRouted}"
       IO.puts "Number of Total Hops: #{numHops}"
       IO.puts "Average hops per Route: #{numHops/numRouted}"

@@ -59,11 +59,11 @@ use GenServer
         # May be added to Larger leaf
         largerLeaf = if (nodeID > myID && !Enum.member?(largerLeaf, nodeID)) do
           if(length(largerLeaf) < 4) do
-            largerLeaf ++ [nodeID]
+            largerLeaf = largerLeaf ++ [nodeID]
           else
             if (nodeID < Enum.max(largerLeaf)) do
               largerLeaf = List.delete(largerLeaf, Enum.max(largerLeaf))
-              largerLeaf ++ [nodeID]
+              largerLeaf = largerLeaf ++ [nodeID]
             else
               largerLeaf
             end
@@ -75,11 +75,11 @@ use GenServer
         # May be added to Lesser leaf
         lesserLeaf = if (nodeID < myID && !Enum.member?(lesserLeaf, nodeID)) do
           if(length(lesserLeaf) < 4) do
-            lesserLeaf ++ [nodeID]
+            lesserLeaf = lesserLeaf ++ [nodeID]
           else
             if (nodeID > Enum.min(lesserLeaf)) do
               lesserLeaf = List.delete(lesserLeaf, Enum.min(lesserLeaf))
-              lesserLeaf ++ [nodeID]
+              lesserLeaf = lesserLeaf ++ [nodeID]
             else
               lesserLeaf
             end
@@ -125,12 +125,10 @@ use GenServer
     end
 
     def leafRecover([], myID, lesserLeaf, largerLeaf) do
-    { lesserLeaf, largerLeaf}
+       {lesserLeaf, largerLeaf}
     end
 
-    def leafRecover([nodeID | newList], myID, lesserLeaf, largerLeaf) do
-      IO.inspect newList
-      IO.inspect largerLeaf
+def leafRecover([nodeID | newList], myID, lesserLeaf, largerLeaf) do
       largerLeaf = if nodeID > myID && largerLeaf != nil && !Enum.member?(largerLeaf, nodeID) do
         if length(largerLeaf) < 4 do
           largerLeaf ++ [nodeID]
@@ -138,8 +136,12 @@ use GenServer
           if nodeID < Enum.max(largerLeaf) do
             largerLeaf = List.delete(largerLeaf, Enum.max(largerLeaf))
             largerLeaf ++ [nodeID]
+          else
+            largerLeaf
           end
         end
+      else
+        largerLeaf
       end
             
       lesserLeaf = if nodeID < myID && lesserLeaf != nil && !Enum.member?(lesserLeaf, nodeID) do
@@ -149,8 +151,12 @@ use GenServer
           if nodeID > Enum.min(lesserLeaf) do
             lesserLeaf = List.delete(lesserLeaf, Enum.min(lesserLeaf))
             lesserLeaf ++ [nodeID]
+          else 
+            lesserLeaf
           end
         end
+      else
+        lesserLeaf
       end
        leafRecover(newList, myID, lesserLeaf, largerLeaf)
     end
@@ -189,11 +195,11 @@ use GenServer
         {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
-     def handle_cast({:requestInTable, samePre,column}, state) do
+     def handle_cast({:requestInTable, samePre, column, sender}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       
       if ((elem(elem(routing_table, samePre), column)) != -1) do
-        GenServer.cast(:global.whereis_name(@name), {:table_recover,samePre,elem(elem(routing_table, samePre), column)})   
+        GenServer.cast(String.to_atom("child"<>Integer.to_string(sender)), {:table_recover, samePre, column, elem(elem(routing_table, samePre), column)})   
       end
 
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
@@ -216,14 +222,14 @@ use GenServer
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
           if theId > myID && Enum.member?(largerLeaf, theId) do
-              List.delete(largerLeaf,theId)
+              largerLeaf = List.delete(largerLeaf,theId)
               if length(largerLeaf) > 0 do
                 GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(largerLeaf))), {:request_leaf_without, theId,myID})
               end
           end
 
           if theId < myID && Enum.member?(lesserLeaf, theId) do
-              List.delete(lesserLeaf,theId)
+              lesserLeaf = List.delete(lesserLeaf,theId)
               if length(lesserLeaf) > 0 do
                 GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.min(largerLeaf))), {:request_leaf_without, theId,myID})
               end
@@ -242,7 +248,7 @@ use GenServer
 
           for i <- 0..3 do
             if ((elem(elem(routing_table, samePref), i)) != myID && elem(elem(routing_table, samePref), i) != theId && elem(elem(routing_table, samePref), i) != -1) do
-              GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref), i))), {:requestInTable, samePref ,nextBit})
+              GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref), i))), {:requestInTable, samePref ,nextBit, myID})
             end   
           end
           
@@ -292,7 +298,7 @@ use GenServer
             else #I am the nearest
               # IO.puts "in leaf"
               allLeaf = []
-              allLeaf ++ [myID] ++ [lesserLeaf] ++ [largerLeaf] # check syntax
+              allLeaf ++ [myID] ++ lesserLeaf ++ largerLeaf # check syntax
               GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
             end 
           #cond else if       
@@ -303,7 +309,7 @@ use GenServer
           (length(lesserLeaf)==0 && toId<myID) || (length(largerLeaf)==0 && toId>myID) -> #I am the nearest
             # IO.puts "in leaf"
             allLeaf = []
-            allLeaf ++ [myID] ++ [lesserLeaf]++[largerLeaf] # check syntax
+            allLeaf ++ [myID] ++ lesserLeaf ++ largerLeaf # check syntax
             # GenServer.whereis(String.to_atom("child"<>Integer.to_string(toId)))
             GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
           elem(elem(routing_table, samePref), nextBit) != -1 ->
@@ -443,7 +449,7 @@ use GenServer
     def handle_cast({:request_leaf_without, theID, sender}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state 
       temp = []
-      temp = temp ++ [lesserLeaf] ++ [largerLeaf]
+      temp = temp ++ lesserLeaf ++ largerLeaf
       temp = List.delete(temp,theID)
       GenServer.cast(String.to_atom("child"<>Integer.to_string(sender)), {:leaf_recover, temp})
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
@@ -455,6 +461,7 @@ use GenServer
       for i<- randList do
        GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:remove_me, myID})
       end
+      Process.sleep(1000)
       Process.exit(self(), :kill)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
