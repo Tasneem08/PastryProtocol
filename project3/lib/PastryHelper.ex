@@ -1,7 +1,6 @@
 defmodule PastryHelper do
 
   @base 4
-  @name :master
   
    
 
@@ -10,8 +9,17 @@ defmodule PastryHelper do
       String.pad_leading(baseNodeID, len, "0")
     end
 
-        
+    def findNearest([neighbor | rest], toId, nearest, diff) do
+        if(abs(toId - neighbor) < diff) do
+                nearest=neighbor
+                diff=abs(toId-neighbor)
+        end
+        findNearest(rest, toId, nearest, diff)
+    end
     
+    def findNearest([], toId, nearest, diff) do
+       {nearest, diff}
+    end
 
     def inform_nodes(routingTable, i, j, numberOfBits, myNodeID, numOfBack) do
     if i >= numberOfBits or j >= 4 do
@@ -36,10 +44,6 @@ defmodule PastryHelper do
       else
         equiPrefix(String.slice(node1, 1..(String.length(node1)-1)), String.slice(node2, 1..(String.length(node2)-1)), bit_position+1)
       end   
-    end
-
-    def add_new_row(routingTable, row_number, new_row, i) do
-        routingTable = Tuple.insert_at(Tuple.delete_at(routingTable, row_number), row_number, new_row)
     end
 
     
@@ -67,7 +71,6 @@ defmodule PastryHelper do
             else
               maxLeafSet
             end
-            
           end
         else
           maxLeafSet
@@ -103,7 +106,8 @@ defmodule PastryHelper do
           routingTable
         end
 
-          {minLeafSet, maxLeafSet, routingTable} = addEntries(myNodeID, List.delete_at(firstEntries, 0), numberOfBits, minLeafSet, maxLeafSet, routingTable)
+          addEntries(myNodeID, List.delete_at(firstEntries, 0), numberOfBits, minLeafSet, maxLeafSet, routingTable)
+    #  {minLeafSet, maxLeafSet, routingTable} = 
       end
     end
 

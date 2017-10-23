@@ -40,29 +40,17 @@ use GenServer
           (length(minLeafSet)>0 && toId >= Enum.min(minLeafSet) && toId <= myID) || (length(maxLeafSet)>0 && toId <= Enum.max(maxLeafSet) && toId >= myID) ->        
             diff=node_IdSpace + 10
             nearest=-1
-            nearest = if(toId < myID) do
-            for i<-minLeafSet do
-              if(abs(toId - i) < diff) do
-                nearest=i
-                diff=abs(toId-i)
-              end
-            end
+            {nearest,diff} = if(toId < myID) do
+                 PastryHelper.findNearest(minLeafSet, toId, nearest, diff)
             else 
-              for i<-maxLeafSet do
-                if(abs(toId - i) < diff) do
-                  nearest=i
-                  diff=abs(toId-i)
-                end
-              end
-              nearest
+                 PastryHelper.findNearest(maxLeafSet, toId, nearest, diff)
             end
 
             if(abs(toId - myID) > diff) do
               GenServer.cast(String.to_atom("child"<>Integer.to_string(nearest)), {:route,message,fromId,toId,hops+1}) 
             else #I am the nearest
               # IO.puts "in leaf"
-              allLeaf = []
-              allLeaf ++ [myID] ++ [minLeafSet] ++ [maxLeafSet] # check syntax
+              allLeaf = [myID] ++ minLeafSet ++ maxLeafSet # check syntax
               GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
             end 
           #cond else if       
@@ -72,8 +60,7 @@ use GenServer
             GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.max(maxLeafSet))), {:route,message,fromId,toId,hops+1})
           (length(minLeafSet)==0 && toId<myID) || (length(maxLeafSet)==0 && toId>myID) -> #I am the nearest
             # IO.puts "in leaf"
-            allLeaf = []
-            allLeaf ++ [myID] ++ [minLeafSet]++[maxLeafSet] # check syntax
+            allLeaf = [myID] ++ minLeafSet ++ maxLeafSet # check syntax
             GenServer.cast(String.to_atom("child"<>Integer.to_string(toId)), {:add_leaf,allLeaf})
           elem(elem(routingTable, equiPref), nextBit) != -1 ->
             # row = elem(routingTable, equiPref)
@@ -99,22 +86,11 @@ use GenServer
             (length(minLeafSet)>0 && toId >= Enum.min(minLeafSet) && toId < myID) || (length(maxLeafSet)>0 && toId <= Enum.max(maxLeafSet) && toId > myID) ->
               diff=node_IdSpace + 10
               nearest=-1
-              nearest = if(toId < myID) do
-                for i<-minLeafSet do
-                  if(abs(toId - i) < diff) do
-                    nearest=i
-                    diff=abs(toId-i)
-                  end
-                end
-              else 
-                for i<-maxLeafSet do
-                    if(abs(toId - i) < diff) do
-                      nearest=i
-                      diff=abs(toId-i)
-                    end
-                end
-                nearest
-              end
+              {nearest,diff} = if(toId < myID) do
+                 PastryHelper.findNearest(minLeafSet, toId, nearest, diff)
+            else 
+                 PastryHelper.findNearest(maxLeafSet, toId, nearest, diff)
+            end
 
               if(abs(toId - myID) > diff) do
                 GenServer.cast(String.to_atom("child"<>Integer.to_string(nearest)), {:route,"Route",fromId,toId,hops+1})
@@ -149,7 +125,7 @@ use GenServer
         {:noreply, {myID, numNodes, minLeafSet, maxLeafSet, routingTable, numOfBack}}
     end
 
-        def handle_cast({:pastryInit, firstEntries}, state) do
+    def handle_cast({:pastryInit, firstEntries}, state) do
       {myID, numNodes, minLeafSet, maxLeafSet, routingTable, numOfBack} = state
       numberOfBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       firstEntries = List.delete(firstEntries, myID)
