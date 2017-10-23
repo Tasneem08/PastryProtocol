@@ -379,4 +379,15 @@ use GenServer
       sendRequest(Enum.to_list(1..numRequests), myID, nodeIDSpace)
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
+
+    def handle_cast({:killYourself, randList}, state) do
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+      randList = List.delete(randList, myID)
+      for i<- randList do
+       GenServer.cast(String.to_atom("child"<>Integer.to_string(i)), {:remove_me, myID})
+      end
+      Process.exit(self(), :kill)
+      {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+    end
+
 end

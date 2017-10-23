@@ -56,10 +56,12 @@ defmodule MainController do
   def handle_cast(:create_failures, state) do
     {numNodes, randList, numRequests, numJoined, numRouted, numHops, nodesToKill} = state
     # IO.inspect "Join finish #{numJoined}"
-     for i <- Enum.to_list(0..nodesToKill-1) do
-        GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.at(randList,i))), :killYourself)
+     list = for i <- Enum.to_list(0..nodesToKill-1) do
+        Process.unlink(GenServer.whereis(String.to_atom("child"<>Integer.to_string(Enum.at(randList,i)))))
+        GenServer.cast(String.to_atom("child"<>Integer.to_string(Enum.at(randList,i))), {:killYourself, randList})
+        {:ok}
      end
-
+     Process.sleep(2000)
      GenServer.cast(:global.whereis_name(@name), :begin_route)
     {:noreply, state}
   end
@@ -82,7 +84,7 @@ defmodule MainController do
   end
 
   def handle_cast(:begin_route, state) do
-    {_, randList, numRequests, _, _, _, _, _} = state
+    {_, randList, numRequests, _, _, _, _} = state
     for node <- randList do
         GenServer.cast(String.to_atom("child"<>Integer.to_string(node)), {:begin_route, numRequests})
     end
