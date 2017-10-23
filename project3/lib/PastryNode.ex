@@ -124,13 +124,14 @@ use GenServer
         routing_table = Tuple.insert_at(Tuple.delete_at(routing_table, rowNum), rowNum, newRow)
     end
 
-    def leafRecover(newList, myID, lesserLeaf, largerLeaf) do
-      if length(newList) == 0 do
-        {lesserLeaf, largerLeaf}
-      end
-      
-      nodeID = List.first(newList)
-      largerLeaf = if nodeID > myID && !Enum.member?(largerLeaf, nodeID) do
+    def leafRecover([], myID, lesserLeaf, largerLeaf) do
+    { lesserLeaf, largerLeaf}
+    end
+
+    def leafRecover([nodeID | newList], myID, lesserLeaf, largerLeaf) do
+      IO.inspect newList
+      IO.inspect largerLeaf
+      largerLeaf = if nodeID > myID && largerLeaf != nil && !Enum.member?(largerLeaf, nodeID) do
         if length(largerLeaf) < 4 do
           largerLeaf ++ [nodeID]
         else
@@ -141,7 +142,7 @@ use GenServer
         end
       end
             
-      lesserLeaf = if nodeID < myID && !Enum.member?(lesserLeaf, nodeID) do
+      lesserLeaf = if nodeID < myID && lesserLeaf != nil && !Enum.member?(lesserLeaf, nodeID) do
         if length(lesserLeaf) < 4 do
           lesserLeaf ++ [nodeID]
         else
@@ -151,8 +152,7 @@ use GenServer
           end
         end
       end
-      
-      {lesserLeaf, largerLeaf} = leafRecover(List.delete_at(newList, 0), myID, lesserLeaf, largerLeaf)
+       leafRecover(newList, myID, lesserLeaf, largerLeaf)
     end
 
     @doc """
