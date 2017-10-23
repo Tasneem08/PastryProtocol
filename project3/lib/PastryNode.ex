@@ -124,6 +124,37 @@ use GenServer
         routing_table = Tuple.insert_at(Tuple.delete_at(routing_table, rowNum), rowNum, newRow)
     end
 
+    def leafRecover(newList, myID, lesserLeaf, largerLeaf) do
+      if length(newList) == 0 do
+        {lesserLeaf, largerLeaf}
+      end
+      
+      nodeID = List.first(newList)
+      largerLeaf = if nodeID > myID && !Enum.member?(largerLeaf, nodeID) do
+        if length(largerLeaf) < 4 do
+          largerLeaf ++ [nodeID]
+        else
+          if nodeID < Enum.max(largerLeaf) do
+            largerLeaf = List.delete(Enum.max(largerLeaf))
+            largerLeaf ++ [nodeID]
+          end
+        end
+      end
+            
+      lesserLeaf = if nodeID < myID && !Enum.member?(lesserLeaf, nodeID) do
+        if length(lesserLeaf) < 4 do
+          lesserLeaf ++ [nodeID]
+        else
+          if nodeID > Enum.min(lesserLeaf) do
+            lesserLeaf = List.delete(Enum.min(lesserLeaf))
+            lesserLeaf ++ [nodeID]
+          end
+        end
+      end
+      
+      {lesserLeaf, largerLeaf} = leafRecover(List.delete_at(newList, 0), myID, lesserLeaf, largerLeaf)
+    end
+
     @doc """
     """   
     def sendRequest([i | rest], myID, nodeIDSpace) do
@@ -339,6 +370,21 @@ use GenServer
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
       nodeIDSpace = round(Float.ceil(:math.pow(@base, numBits)))
       sendRequest(Enum.to_list(1..numRequests), myID, nodeIDSpace)
+      {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+    end
+
+    def handle_cast({:leaf_recover, newList}, state) do
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+      {lesserLeaf, largerLeaf} = leafRecover(newList, myID, lesserLeaf, largerLeaf)
+      {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+    end
+
+    def handle_cast({:request_leaf_without, theID, sender}, state) do
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state 
+      temp = []
+      temp = temp ++ [lesserLeaf] ++ [largerLeaf]
+      temp = List.delete(temp,theID)
+      GenServer.cast(String.to_atom("child"<>Integer.to_string(sender)), {:leaf_recover, temp})
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 end
