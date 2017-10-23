@@ -189,6 +189,27 @@ use GenServer
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
+     def handle_cast({:requestInTable, samePre,column}, state) do
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+      if ((elem(elem(routing_table, samePre), column)) != -1) do
+        GenServer.cast(:global.whereis_name(@name), {:table_recover,samePre,elem(elem(routing_table, samePre), column)})   
+      end
+      {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+     end
+
+
+     def handle_cast({:table_recover, row1, column ,newId}, state) do
+      {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
+        routing_table=if ((elem(elem(routing_table, row1), column)) != -1) do
+            row = elem(routing_table, row1)
+            updatedRow = Tuple.insert_at(Tuple.delete_at(row, column), column, newId)
+            Tuple.insert_at(Tuple.delete_at(routing_table, row), row, updatedRow)
+            routing_table        
+        end
+      {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
+     end
+
+
     def handle_cast({:remove_me, theId}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       numBits = round(Float.ceil(:math.log(numNodes)/:math.log(@base)))
