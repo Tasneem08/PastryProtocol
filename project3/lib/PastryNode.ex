@@ -218,8 +218,8 @@ use GenServer
             end
 
           for i <- 0..3 do
-            if(elem(elem(routing_table, samePref), i) != myId && elem(elem(routing_table, samePref), i) != theId && elem(elem(routing_table, samePref), i) != -1) do
-              GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref)), {:requestInTable, samePref ,nextBit})
+            if ((elem(elem(routing_table, samePref), i)) != myId && elem(elem(routing_table, samePref), i) != theId && elem(elem(routing_table, samePref), i) != -1) do
+              GenServer.cast(String.to_atom("child"<>Integer.to_string(elem(elem(routing_table, samePref)))), {:requestInTable, samePref ,nextBit})
             end   
           end
           
@@ -411,7 +411,6 @@ use GenServer
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
-<<<<<<< HEAD
     def handle_cast({:leaf_recover, newList}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       {lesserLeaf, largerLeaf} = leafRecover(newList, myID, lesserLeaf, largerLeaf)
@@ -426,7 +425,6 @@ use GenServer
       GenServer.cast(String.to_atom("child"<>Integer.to_string(sender)), {:leaf_recover, temp})
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
-=======
     def handle_cast({:killYourself, randList}, state) do
       {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack} = state
       randList = List.delete(randList, myID)
@@ -437,5 +435,4 @@ use GenServer
       {:noreply, {myID, numNodes, lesserLeaf, largerLeaf, routing_table, numOfBack}}
     end
 
->>>>>>> f5b706fcd1599463711f7bd13b41f3c20a090fea
 end
