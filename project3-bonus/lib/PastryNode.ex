@@ -94,7 +94,7 @@ use GenServer
 
     def startlink(nodeID, numNodes) do
       nodename = String.to_atom("child"<>Integer.to_string(nodeID))
-      GenServer.start_link(PastryNode, [nodeID, numNodes], name: nodename)
+      GenServer.start_link(PastryNode, [nodeID, numNodes], name: nodename,debug: [:statistics, :trace])
     end
 
     def init([nodeID, numNodes]) do
