@@ -113,7 +113,10 @@ use GenServer
               true ->
                 IO.puts("Impossible")
           end  #end of cond       
+
+
         end #end of if myId = toId
+        
       end  #end of cond
       {:noreply, {myID, numNodes, minLeafSet, maxLeafSet, routingTable, numOfBack}}
     end
