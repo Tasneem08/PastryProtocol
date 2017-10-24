@@ -1,6 +1,6 @@
 # Project3
 
-**Mugdha Mathkar UFID:54147979    Tasneem Sheikh UFID:01360914**
+**Mugdha Mathkar UFID:54147979     Tasneem Sheikh UFID:01360914**
 
 ## How to run?
 
@@ -26,34 +26,39 @@ PastryHelper.ex has the methods used by the handle_casts
 MainController.ex is the starting point of the code.
 
 Here is the result obtained for numNodes=100 and numRequests=3
-Number of Total Routes: 300
-Number of Total Hops: 1014
-Average hops per Route: 3.38
+Number of Total Routes:|300
+---------------------- |-------
+Number of Total Hops:  |1014
+Average hops per Route: | 3.38
 ** (EXIT from #PID<0.74.0>) shutdown
 
 Results obtained for various numNodes:
 
-NumNodes    NumRequests    Number of routes  Total number of hops  Average Hops
-100         3              300                1014                 3.38
-500         3              1500               6241                 4.161
-700         3              2100               9069                 4.319
 
+NumNodes      | NumRequests   | Number of routes | Total number of hops | Average Hops
+------------- | ------------- | ---------------- |--------------------- |-------------
+100           | 3             | 300              | 1014                 | 3.38
+500           | 3             | 1500             | 6241                 | 4.161
+700           | 3             | 2100             | 9069                 | 4.319
 
 What is the largest network you managed to deal with?
 
 We tested the code on 10000 nodes and got the following results:
-./project3 10000 10
-Number of Total Hops: 654677
-Number of Total Routes: 100000
-Average hops per route: 6.3466
+./project3 10000 10 
+Number of Total Hops:  |654677
+-----------------------| -------
+Number of Total Routes:| 100000
+Average hops per route:| 6.3466
 ** (EXIT from #PID<0.74.0>) shutdown
 
 Results for 5000 nodes:
 
 ./project3 5000 10
-Number of Total Routes: 50000
-Number of Total Hops: 295723
-Average hops per Route: 5.91446
+Number of Total Routes | 50000
+-----------------------| -------
+Number of Total Hops   | 295723
+Average hops per Route | 5.91446
+
 ** (EXIT from #PID<0.74.0>) shutdown
 
 
