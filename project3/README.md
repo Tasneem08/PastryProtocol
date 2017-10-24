@@ -6,8 +6,9 @@
 
 Navigate to the right directory and run the following commands;
 
-mix escript.build
-./project3 <numNodes> <numRequests>
+mix escript.build   
+
+./project3 numNodes numRequests
 
 Brief Description:
 
